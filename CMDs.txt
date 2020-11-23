@@ -1,0 +1,27 @@
+py -m pip install --upgrade pip
+py -m pip install --user virtualenv
+
+python -m pip install --upgrade pip
+pip install virtualenv
+
+cd C:\Users\Win7ADM\Documents\GitHub\SVARpy-Test
+py -m venv env
+
+cd C:\Users\Win7ADM\Documents\GitHub\SVARpy-Test
+.\env\Scripts\activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+pip install -i https://test.pypi.org/simple/ SVARpy
+
+pip freeze
+
+python
+import SVAR
+SVAR.test()
+
+
+
+
+cd C:\Users\Win7ADM\Documents\GitHub\SVARpy
+python setup.py sdist bdist_wheel
+python -m twine upload --repository testpypi dist/*
