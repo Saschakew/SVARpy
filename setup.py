@@ -8,7 +8,7 @@ with open('LICENSE') as f:
  
 
 setuptools.setup(
-    name="SVARpy", # Replace with your own username
+    name="SVARpy",  
     version="0.1.6",
     author="Sascha Keweloh",
     author_email="sascha.keweloh@tu-dortmund.de",
