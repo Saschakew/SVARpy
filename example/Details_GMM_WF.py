@@ -4,7 +4,7 @@ import SVAR.SVARutilGMM
 
 np.random.seed(0)
 n = 3
-T = 5000
+T = 500
 # Specitfy B_true
 B_true = np.eye(n)
 # Draw structural shocks
