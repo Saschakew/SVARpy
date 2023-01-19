@@ -21,12 +21,15 @@ u = np.transpose(u)
 
 
 
+
+# Estimate SVAR with GMM-WF
 prepOptions = dict()
 prepOptions['printOutput'] = False
 SVAR_out = SVAR.SVARest(u, estimator='GMM_WF', prepOptions=prepOptions )
 
 B_est = SVAR_out['B_est']
 AVAR_est = np.reshape(np.diag(SVAR_out['Avar_est']), [n, n])
+
 print("Estimated B")
 print(B_est)
 
