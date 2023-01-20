@@ -5,7 +5,7 @@ np.random.seed(0)
 
 # Number of Variables n and sample size T
 n = 3
-T = 500
+T = 5000
 # Specitfy B_true
 B_true = np.eye(n)
 # Draw structural shocks from mixture of normal
