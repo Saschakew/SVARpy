@@ -26,13 +26,13 @@ def PML_avar(n):
 def prepareOptions(u,
                    df_t = 7,
                    bstart=[], bstartopt='Rec',
-                   n_rec=False,
-                   printOutput=True
+                   blocks=False, n_rec=False,
+                   printOutput=True,
+                    estimator = 'PML'
                    ):
     options = dict()
-    blocks = False
 
-    estimator = 'PML'
+
     options['estimator'] = estimator
 
     T, n = np.shape(u)
@@ -52,13 +52,14 @@ def prepareOptions(u,
     options['blocks'] = blocks
 
 
-    bstart = SVAR.estPrepare.prepare_bstart(estimator, bstart, u, restrictions, n_rec,blocks, bstartopt=bstartopt)
+    bstart = SVAR.estPrepare.prepare_bstart(estimator, bstart, u, options, bstartopt=bstartopt)
     options['bstart'] = bstart
 
     return options
 
 
 def SVARout(est_SVAR, options, u):
+    T, n = np.shape(u)
     out_SVAR = dict()
     out_SVAR['options'] = options
 
@@ -70,7 +71,8 @@ def SVARout(est_SVAR, options, u):
     B_est = np.matmul(options['V'], B_est)
     out_SVAR['B_est'] = B_est
 
-    e = SVAR.innovation(u, b_est, restrictions=options['restrictions'], whiten=options['whiten'],
+    e = SVAR.innovation(u, SVAR.get_BVector(B_est, restrictions=options['restrictions']),
+                        restrictions=options['restrictions'],
                         blocks=options['blocks'])
     out_SVAR['e'] = e
 
@@ -85,14 +87,7 @@ def SVARout(est_SVAR, options, u):
     out_SVAR['Avar_est'] = V_est
 
     if options['printOutput']:
-        print('Estimated B:')
-        SVAR.estOutput.print_B(out_SVAR['B_est'])
-
-        print('Estimated Avar of B:')
-        SVAR.estOutput.print_Avar(out_SVAR['Avar_est'])
-
-        print('Moments of unmixed innovations')
-        SVAR.estOutput.print_Moments(out_SVAR['omega'])
+        SVAR.estOutput.print_out(n, T, out_SVAR)
 
     return out_SVAR
 

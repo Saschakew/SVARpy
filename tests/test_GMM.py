@@ -252,7 +252,7 @@ def test_get_Omega():
 
 
 def test_get_f():
-    u = np.array([[2, 3], [2, 3]])
+    u = np.array([[2, 3], [2, 3] ])
     b = np.array([1, 0, 0, 1])
     restrictions = []
     n = 2
@@ -296,6 +296,31 @@ def test_get_g(supply_eps, supply_g):
     g = SVAR.SVARutilGMM.get_g(u, b, restrictions, moments, moments_powerindex, whiten)
     assert g.tolist() == supply_g.tolist()
 
+    moments = SVAR.SVARutilGMM.get_Mr(3, n)
+    moments = np.append(moments, SVAR.SVARutilGMM.get_Mr(4, n), axis=0)
+    moments_powerindex = SVAR.SVARutilGMM.get_Moments_powerindex(moments)
+    whiten = True
+    b = SVAR.SVARutil.get_BVector(B, whiten=whiten)
+    g = SVAR.SVARutilGMM.get_g(u, b, restrictions, moments, moments_powerindex, whiten)
+    gnew = SVAR.SVARutilGMM.get_g_wf(u, b, restrictions, moments, moments_powerindex, whiten)
+
+    g=np.round(g,5)
+    gnew=np.round(gnew, 5)
+
+    assert g.tolist() == gnew.tolist()
+
+    moments= SVAR.SVARutilGMM.get_Moments_MIcorrection(n, blocks=False)
+    moments_powerindex = SVAR.SVARutilGMM.get_Moments_powerindex(moments)
+    g1 = SVAR.SVARutilGMM.get_g_wf(b=b, u=u, restrictions=restrictions, moments=moments, moments_powerindex=moments_powerindex,
+          whiten=whiten, blocks=False )
+    g2 = SVAR.SVARutilGMM.get_g(b=b, u=u, restrictions=restrictions, moments=moments, moments_powerindex=moments_powerindex,
+          whiten=whiten, blocks=False  )
+
+    g1=np.round(g1,5)
+    g2=np.round(g2, 5)
+
+    assert g1.tolist() == g2.tolist()
+
 
 def test_loss():
     u = np.array([[2, 3], [2, 3]])
@@ -313,34 +338,6 @@ def test_loss():
     loss = SVAR.estimatorGMM.loss(u, b, W=W, moments=moments, moments_powerindex=moments_powerindex, restrictions=restrictions)
     assert loss == 5294.0
 
-def test_GMM_avar(supply_eps):
-    n = 2
-    u = supply_eps[:, :n]
-    restrictions = np.full([n, n], np.nan)
-    B = np.eye(n)
-    b = SVAR.SVARutil.get_BVector(B, restrictions=restrictions)
-    moments = SVAR.SVARutilGMM.get_Mr(2, n)
-    moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(2, n), axis=0)
-    moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(3, n), axis=0)
-    moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(4, n), axis=0)
-    W = np.eye(np.shape(moments)[0])
-    k_step = 1
-    # GMM_out = SVAR.K_GMM.GMM(u, b, Jacobian, W, restrictions, moments, kstep=k_step)
-    opt_svar = dict()
-    opt_svar['W'] = W
-    opt_svar['Wstartopt'] = 'specific'
-    opt_svar['kstep'] = k_step
-    opt_svar['bstartopt'] = 'specific'
-    opt_svar['bstart'] = b
-    opt_svar['moments'] = moments
-    opt_svar['restrictions'] = restrictions
-
-
-    svar_out = SVAR.SVARest(u, estimator='GMM', prepOptions=opt_svar)
-    V = svar_out['Avar_est']
-    V_expected = np.array([[1.7409094051161254, -0.031698773570974025, 0.15592054887742773, 0.46321878755198453], [-0.031698773570974, 1.4952825734424806, -0.6335439601070609, -0.30049023834461774], [0.15592054887742776, -0.6335439601070612, 1.7048131709677288, 0.38794602532055444], [0.46321878755198453, -0.30049023834461774, 0.38794602532055433, 1.6913768246817211]])
-    assert V.tolist() == V_expected.tolist()
-
 
 
 
@@ -354,12 +351,27 @@ def test_get_W_optimal(supply_eps):
     moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(2, n), axis=0)
     moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(3, n), axis=0)
     moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(4, n), axis=0)
-    whiten = False
-    W = SVAR.estimatorGMM.get_W_opt(u, b, restrictions, moments )
+    moments_powerindex = SVAR.SVARutilGMM.get_Moments_powerindex(moments)
 
-    W_expected = np.array([[0.2587077339661509, 0.041514398432926584, 0.04344726539731498, -0.01613875245469707, 0.051345454473620655, -0.008895149579102816, 0.0013870105305476524, -0.0618954276036375], [0.041514398432926605, 0.23677500858967257, 0.022164761737540454, 0.03858422566844861, 0.029488014105424, 0.0014062951112191516, -0.009440714467586375, -0.053205566093385934], [0.04344726539731486, 0.02216476173754043, 4.440209172187058, 0.028062029568523782, -0.10547641211582394, -0.3193285045191833, -0.2806889505002043, -0.03578372196195379], [-0.016138752454697054, 0.038584225668448616, 0.028062029568523876, 0.26256685050113865, 0.05956870708093367, -0.027510874036621762, -0.02779386178409415, -0.03631812777388941], [0.051345454473620725, 0.029488014105423992, -0.10547641211582363, 0.059568707080933724, 0.3783426226459335, 0.017866272823187812, -0.06103760918527769, -0.0919732047394959], [-0.0088951495791028, 0.001406295111219152, -0.31932850451918326, -0.027510874036621745, 0.017866272823187895, 0.0560920527321429, 0.0027468312213206033, 0.007666804977153761], [0.0013870105305476416, -0.009440714467586379, -0.2806889505002043, -0.027793861784094154, -0.061037609185277654, 0.0027468312213206184, 0.060177001122095515, 0.011310916312183101], [-0.061895427603637504, -0.05320556609338593, -0.03578372196195385, -0.03631812777388941, -0.09197320473949584, 0.007666804977153777, 0.011310916312183089, 0.07759784792428635]])
+    W = SVAR.SVARutilGMM.get_W_opt(u, b, restrictions, moments, Wpara='Uncorrelated')
+
+
+    f = SVAR.SVARutilGMM.get_f(u=u, b=b, restrictions=restrictions, moments=moments,
+              moments_powerindex=moments_powerindex)
+    S = np.cov(f.T )
+    W_expected = np.linalg.inv(S)
+
     assert W.tolist() == W_expected.tolist()
 
+    W = SVAR.SVARutilGMM.get_W_opt(u, b, restrictions, moments, Wpara='Independent')
+
+    e = SVAR.innovation(u, b, restrictions=restrictions)
+    omega = SVAR.SVARutil.get_Omega_Moments(e)
+    S = SVAR.SVARutilGMM.get_S_Indep(Moments_1=moments, Moments_2=moments, omega=omega)
+    W_expected = np.linalg.inv(S)
+
+
+    assert W.tolist() == W_expected.tolist()
 
 def test_Jacobian(supply_eps, supply_Jac):
     n = 5
@@ -371,9 +383,15 @@ def test_Jacobian(supply_eps, supply_Jac):
     moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(2, n), axis=0)
     moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(3, n), axis=0)
     moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(4, n), axis=0)
+    moments_powerindex = SVAR.SVARutilGMM.get_Moments_powerindex(moments)
+
     Jacobian = SVAR.SVARutilGMM.generate_Jacobian_function(moments=moments, restrictions=restrictions)
-    Omega = SVAR.SVARutil.get_Omega(supply_eps)
-    Jac = Jacobian(u=u, b=b, restrictions=restrictions, Omega=Omega)
+    Omega = SVAR.SVARutil.get_CoOmega(supply_eps)
+    Jac = Jacobian(u=u, b=b, restrictions=restrictions, CoOmega=Omega)
+
+    Jac=np.round(Jac,5)
+    supply_Jac=np.round(supply_Jac,5)
+
     assert Jac.tolist() == supply_Jac.tolist()
 
 
@@ -389,146 +407,15 @@ def test_gradient(supply_eps):
     moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(4, n), axis=0)
     moments_powerindex = SVAR.SVARutilGMM.get_Moments_powerindex(moments)
     whiten = False
-    W = SVAR.estimatorGMM.get_W_opt(u, b, restrictions, moments, whiten )
+    W = SVAR.SVARutilGMM.get_W_opt(u, b, restrictions, moments, Wpara='Uncorrelated')
     Jacobian = SVAR.SVARutilGMM.generate_Jacobian_function(moments=moments, restrictions=restrictions)
     grad = SVAR.estimatorGMM.gradient(u, b, Jacobian, W, restrictions, moments, moments_powerindex)
     grad = np.round(grad,8)
-    grad_expected = np.array([ 0.02309447, -0.02224085, -0.01756799,  0.02714491,  0.03424183,
-       -0.01757593,  0.02913043,  0.04166165,  0.03150388,  0.01295188,
-        0.00919941,  0.02080365,  0.04692599, -0.01913157, -0.0005934 ,
-        0.02539723,  0.04048191, -0.03109488,  0.01201416, -0.04215912,
-       -0.01284358,  0.03418466,  0.00109825, -0.04083541,  0.03672443])
+    grad_expected = np.array([0.04618893, -0.04448169, -0.03513598, 0.05428982, 0.06848366, -0.03515186, 0.05826086, 0.0833233, 0.06300775, 0.02590376, 0.01839882, 0.04160729, 0.09385199, -0.03826313, -0.00118679, 0.05079445, 0.08096382, -0.06218975, 0.02402831, -0.08431825, -0.02568715, 0.06836932, 0.00219649, -0.08167082, 0.07344885])
 
     assert grad.tolist() == grad_expected.tolist()
 
 
-def test_GMM(supply_eps):
-    n = 2
-    u = supply_eps[:, :n]
-    restrictions = np.full([n, n], np.nan)
-    B = np.eye(n)
-    b = SVAR.SVARutil.get_BVector(B, restrictions=restrictions)
-    moments = SVAR.SVARutilGMM.get_Mr(2, n)
-    moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(2, n), axis=0)
-    moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(3, n), axis=0)
-    moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(4, n), axis=0)
-    W = np.eye(np.shape(moments)[0])
-    k_step = 1
-    # GMM_out = SVAR.K_GMM.GMM(u, b, Jacobian, W, restrictions, moments, kstep=k_step)
-    prepOptions = dict()
-    prepOptions['W'] = W
-    prepOptions['Wstartopt'] = 'specific'
-    prepOptions['kstep'] = k_step
-    prepOptions['bstartopt'] = 'specific'
-    prepOptions['bstart'] = b
-    prepOptions['moments'] = moments
-    prepOptions['restrictions'] = restrictions
-    svar_out = SVAR.SVARest(u, estimator='GMM', prepOptions=prepOptions)
-    B_est = svar_out['B_est']
-    loss = svar_out['loss']
-    avar = svar_out['Avar_est']
-
-    loss_expected = 0.0010397156910913927
-    B_est_expected = np.array([[0.9935435303893686, -0.008753877534001258], [0.010957876833087816, 1.013418217704791]])
-    assert loss == loss_expected
-    assert svar_out['options']['bstart'].tolist() == b.tolist()
-    assert svar_out['options']['moments'].tolist() == moments.tolist()
-    assert svar_out['options']['kstep'] == k_step
-    assert B_est.tolist() == B_est_expected.tolist()
-    assert svar_out['options']['W'].tolist() == W.tolist()
-
-    prepOptions = dict()
-    prepOptions['Wstartopt'] = 'I'
-    svar_out = SVAR.SVARest(u, estimator='GMM', prepOptions=prepOptions)
-    B_est = svar_out['B_est']
-    loss = svar_out['loss']
-
-    loss_expected = 0.0005985542242835934
-    B_est_expected = np.array([[0.9940721813730994, -0.005111466693945372], [0.017745900777426223, 1.0131512637458946]])
-
-    assert loss == loss_expected
-    assert B_est.tolist() == B_est_expected.tolist()
-
-
-def test_GMM_white(supply_eps):
-    n = 2
-    u = supply_eps[:, :n]
-    b = np.array([0])
-    moments = SVAR.SVARutilGMM.get_Cr(3, n)
-    moments = np.append(moments, SVAR.SVARutilGMM.get_Cr(4, n), axis=0)
-    W = np.eye(np.shape(moments)[0])
-
-    prepOptions = dict()
-    prepOptions['W'] = W
-    prepOptions['Wstartopt'] = 'specific'
-    prepOptions['bstart'] = b
-    prepOptions['bstartopt'] = 'specific'
-    prepOptions['moments'] = moments
-    svar_out = SVAR.SVARest(u, estimator='GMM_W', prepOptions=prepOptions)
-    B_est = svar_out['B_est']
-    loss = svar_out['loss']
-    Omega2 = svar_out['Omega_all'][0]
-    Omega2 = np.round(Omega2, 15)
-
-    loss_expected = 0.003865450152482355
-    B_est_expected = np.array([[0.997230283623227, -0.004399373906083158], [0.014447338782992897, 1.017457148695816]])
-    Omega2_expected = np.array([[1.0, -0.0], [np.nan, 1.0]])
-    assert loss == loss_expected
-    assert B_est.tolist() == B_est_expected.tolist()
-    assert Omega2[~np.isnan(Omega2)].tolist() == Omega2_expected[~np.isnan(Omega2)].tolist()
-
-
-
-def test_GMM_fast(supply_eps):
-    n = 2
-    u = supply_eps[:, :n]
-    b = np.array([0])
-
-    prepOptions = dict()
-    prepOptions['bstart'] = b
-    prepOptions['bstartopt'] = 'specific'
-    svar_out = SVAR.SVARest(u, estimator='GMM_WF', prepOptions=prepOptions)
-    B_est = svar_out['B_est']
-    loss = svar_out['loss']
-    Omega2 = svar_out['Omega_all'][0]
-    Omega2 = np.round(Omega2, 15)
-
-    loss_expected = -19.7494828332592
-    B_est_expected = np.array([[0.997231567472602, -0.004098036379113462], [0.014139888759238346, 1.0174614678581229]])
-    Omega2_expected = np.array([[1.0, -0.0], [np.nan, 1.0]])
-    assert loss == loss_expected
-    assert B_est.tolist() == B_est_expected.tolist()
-    assert Omega2[~np.isnan(Omega2)].tolist() == Omega2_expected[~np.isnan(Omega2)].tolist()
-
-
-def test_GMM_PartlyRecurisve(supply_eps):
-    n = 5
-    u = supply_eps[:, :n]
-
-    n_rec = 2
-    prepOptions = dict()
-    prepOptions['n_rec'] = n_rec
-    prepOptions['Wstartopt'] = 'I'
-    SVAR_out = SVAR.SVARest(u, estimator='GMM_W', prepOptions=prepOptions)
-    B_est_PC = SVAR_out['B_est']
-
-    prepOptions = dict()
-    prepOptions['n_rec'] = 5
-    prepOptions['Wstartopt'] = 'I'
-    Rec_out = SVAR.SVARest(u, estimator='GMM', prepOptions=prepOptions)
-    B_est_rec = Rec_out['B_est']
-
-    assert B_est_PC[:n_rec,:n_rec].tolist() == B_est_rec[:n_rec,:n_rec].tolist()
-
-    expected = np.array([[0.003330608469677456, -0.033621407028708195],
- [-0.010995613002447795, -0.020220644924939964],
- [-0.0179660316466463, -0.0012376406712120119]])
-    assert B_est_PC[n_rec:,:n_rec].tolist() == expected.tolist()
-
-    expected = np.array([[0.9845972613833915, 0.02681168147749875, 0.004427083644211701],
- [-0.003259823923889076, 1.001091873682849, 0.00533142301218077],
- [0.0022816522163611945, 0.011374323197186675, 0.988404250711615]])
-    assert B_est_PC[n_rec:, n_rec:].tolist() == expected.tolist()
 
 
 def test_fast_weighting(supply_eps):

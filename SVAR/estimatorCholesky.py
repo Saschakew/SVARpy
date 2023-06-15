@@ -6,7 +6,7 @@ def get_B_Cholesky(u):
     T, n = np.shape(u)
     Sigma = np.dot(np.transpose(u), u) / T
     B = np.linalg.cholesky(Sigma)
-    e = np.matmul(u, B)
+    e = np.transpose(np.matmul(np.linalg.inv(B), np.transpose(u)))
     Omega = SVAR.SVARutil.get_Omega(e)
 
     out = dict()

@@ -2,20 +2,18 @@ import copy
 import itertools
 import numpy as np
 import scipy
-from pyunlocbox import acceleration, solvers
+import SVAR.SVARutilGMM
 from scipy.optimize import LinearConstraint
 
 
-
-def innovation(u, b, restrictions=[], whiten=False, blocks=False):
+def innovation(u, b, restrictions=[], whiten=False, blocks=False ):
     # Calculates unmixed innovations according to: e = B^{-1} u
 
-    B = get_BMatrix(b, restrictions=restrictions, whiten=whiten, blocks=blocks)
+    B = get_BMatrix(b, restrictions=restrictions, whiten=whiten, blocks=blocks )
     A = np.linalg.inv(B)
     e = np.matmul(A, np.transpose(u))
     e = np.transpose(e)
     return e
-
 
 def get_BMatrix(b, restrictions=[], whiten=False, blocks=False):
     # Transforms vectorized B into B
@@ -36,19 +34,17 @@ def get_BMatrix(b, restrictions=[], whiten=False, blocks=False):
 
     return B
 
-
-def get_BVector(B, restrictions=[], whiten=False):
+def get_BVector(B, restrictions=[], whiten=False, blocks=False):
     # inverse of get_BMatrix
     # ToDo: Error if element of B!=restrictions
     if whiten:
         # ToDo: Add restrictions
-        b = get_Skewsym(B)
+        b = get_Skewsym(B, blocks=blocks)
     else:
         if np.array(restrictions).size == 0:
             restrictions = np.full(np.shape(B), np.nan)
         b = B[np.isnan(restrictions) == 1]
     return b
-
 
 def get_block_rec(n_rec, n):
     if not (n_rec):
@@ -59,7 +55,6 @@ def get_block_rec(n_rec, n):
     if n_rec + 1 <= n:
         blocks.append(np.array([n_rec + 1, n]))
     return blocks
-
 
 def getRestrictions_recursive(B):
     # restricts upper right triangular matrix
@@ -92,12 +87,19 @@ def do_whitening(u, white):
     return z, V
 
 
-def get_Skewsym(B):
-    n = np.shape(B)[0]
+def get_Skewsym(B, blocks=False):
+    if not blocks:
+        n = int(np.shape(B)[0])
+        blocks = list()
+        blocks.append(np.array([1, n]))
+    s = np.array([])
+    for block in blocks:
+        n = block[1] - block[0] + 1
+        B_this = B[block[0] - 1:block[1], block[0] - 1:block[1]]
+        S = scipy.linalg.logm(B_this)
+        il1 = np.tril_indices(n, k=-1)
+        s = np.append(s,S[il1])
 
-    S = scipy.linalg.logm(B)
-    il1 = np.tril_indices(n, k=-1)
-    s = S[il1]
     return s
 
 
@@ -113,10 +115,11 @@ def get_Orthogonal(b, blocks=False):
         n = block[1] - block[0] + 1
         S = np.full([n, n], 0.0)
         il1 = np.tril_indices(n, k=-1)
-        n_s = np.int(np.size(il1) / 2)
+        n_s = int(np.size(il1) / 2)
         S[il1] = b[b_counter:b_counter + n_s]
         S = S - np.transpose(S)
-        B_this = scipy.linalg.expm(S)
+        # B_this = scipy.linalg.expm(S)
+        B_this, expm_frechet_AE = scipy.linalg.expm_frechet(S, S)
         B[block[0] - 1:block[1], block[0] - 1:block[1]] = B_this
         b_counter = b_counter + n_s
     if not (b_counter == np.shape(b)[0]):
@@ -125,17 +128,23 @@ def get_Orthogonal(b, blocks=False):
 
 
 ## Permutation
-def PermInTheta(B):
-    n = np.shape(B)[0]
-    for i in range(n):
-        ind = np.argmax(np.abs(B[i, i:]))
-        thisPerm = np.arange(n)
-        thisPerm[i] = (i) + ind
-        thisPerm[(i) + ind] = i
-        B = B[:, thisPerm]
-    S = np.diag(np.diag(np.sign(B)))
-    B = np.matmul(B, S)
-    return B
+def PermToB0(B0,B,avar,restrictions,T):
+    b = get_BVector(B, restrictions=restrictions, whiten=False)
+    n = np.shape(B0)[0]
+    R = np.eye(np.shape(b)[0])
+    avar = avar[np.logical_not(np.isnan(avar))]
+    avar = np.reshape(avar, [np.size(b), np.size(b)])
+    perms = get_AllSignPerm(n)
+    score = np.zeros(np.shape(perms)[0])
+    for i, perm in enumerate(perms):
+        B0perm = np.matmul(B0, perm)
+        if (restrictions[np.isnan(restrictions) == False] == B0perm[np.isnan(restrictions) == False]).all():
+            r =get_BVector(B0perm, restrictions=restrictions, whiten=False)
+            waldstat, wald_p = SVAR.SVARutilGMM.wald(R, r, b, avar, T)
+            score[i] = wald_p
+    Bbest = np.matmul(B, np.linalg.inv(perms[np.argmax(score)]))
+    return Bbest, perms[np.argmax(score)]
+
 
 
 def get_AllSignPerm(n):
@@ -158,53 +167,53 @@ def get_AllSignPerm(n):
     return Perms
 
 
-def get_BestSignPerm(eps, e, n_rec=0):
-    n = np.shape(eps)[1]
-    n_nonrec = n - n_rec
-
-    Perm_rec = np.eye(n_rec)
-    Perm_ur = np.zeros([n_rec, n_nonrec])
-    Perm_ll = np.zeros([n_nonrec, n_rec])
-
-    # Drop recursive part
-    eps = eps[:, n_rec:]
-    e = e[:, n_rec:]
-    n = np.shape(eps)[1]
-    Perms = get_AllSignPerm(n)
-
-    score = np.zeros([np.shape(Perms)[0], n])
-    for i, perm in enumerate(Perms):
-        e_perm = np.matmul(e, perm)
-        for j in range(n):
-            _, p_val = scipy.stats.ks_2samp(eps[:, j], e_perm[:, j])
-            score[i, j] = p_val
-
-    score_sum = np.sum(score, axis=1)
-    idx = np.argmax(score_sum)
-    Perm_nonrec = Perms[idx]
-
-    BestPerm = np.hstack((np.vstack((Perm_rec, Perm_ll)), np.vstack((Perm_ur, Perm_nonrec))))
-
-    return BestPerm
-
-
 def get_Omega(e):
     n = np.shape(e)[1]
-    Omega2 = np.full([n, n], np.nan)
-    Omega3 = np.full([n, n, n], np.nan)
-    Omega4 = np.full([n, n, n, n], np.nan)
+    CoOmega2 = np.full([n, n], np.nan)
+    CoOmega3 = np.full([n, n, n], np.nan)
+    CoOmega4 = np.full([n, n, n, n], np.nan)
     for pi in range(n):
         for pj in range(pi, n):
             save_ij = np.array([np.prod(e[:, np.array([pi, pj])], axis=1)]).T
-            Omega2[pi, pj] = np.mean(save_ij)
+            CoOmega2[pi, pj] = np.mean(save_ij)
             for pk in range(pj, n):
                 save_ijk = np.array([np.prod(np.append(save_ij, e[:, np.array([pk])], axis=1), axis=1)]).T
-                Omega3[pi, pj, pk] = np.mean(save_ijk)
+                CoOmega3[pi, pj, pk] = np.mean(save_ijk)
                 for pl in range(pk, n):
                     save_ijkl = np.prod(np.append(save_ijk, e[:, np.array([pl])], axis=1), axis=1)
-                    Omega4[pi, pj, pk, pl] = np.mean(save_ijkl)
-    return Omega2, Omega3, Omega4
+                    CoOmega4[pi, pj, pk, pl] = np.mean(save_ijkl)
+    return CoOmega2, CoOmega3, CoOmega4
 
+def get_CoOmega(e ):
+    [T,n] = np.shape(e)
+    CoOmega1 = np.mean(e.T,axis=1)
+    CoOmega2 = np.matmul(e.T , e   )/T
+    CoOmega3 = np.full([n, n, n], np.nan)
+    CoOmega4 = np.full([n, n, n, n], np.nan)
+    CoOmega5 = np.full([n, n, n, n,n], np.nan)
+    CoOmega6 = np.full([n, n, n, n,n,n], np.nan)
+    CoOmega7 = np.full([n, n, n, n,n,n,n], np.nan)
+    CoOmega8 = np.full([n, n, n, n,n,n,n,n], np.nan)
+    for p3 in range(n):
+        e_save3 = e.T * e[:,p3]
+        CoOmega3[:,:,p3] = np.matmul( e_save3    , e    )/T
+        for p4 in range(n):
+            e_save4 = e_save3  * e[:,p4]
+            CoOmega4[:,:,p3,p4] = np.matmul(e_save4 , e  )/T
+            for p5 in range(n):
+                e_save5 = e_save4 * e[:,p5]
+                CoOmega5[:,:,p3,p4,p5] = np.matmul(e_save5 , e  )/T
+                for p6 in range(n):
+                    e_save6 = e_save5 * e[:,p6]
+                    CoOmega6[:, :, p3, p4, p5, p6] = np.matmul(e_save6, e ) / T
+                    for p7 in range(n):
+                        e_save7 = e_save6 * e[:,p7]
+                        CoOmega7[:, :, p3, p4, p5, p6, p7] = np.matmul(e_save7, e ) / T
+                        for p8 in range(n):
+                            e_save8 = e_save7 * e[:,p8]
+                            CoOmega8[:, :, p3, p4, p5, p6, p7, p8] = np.matmul(e_save8, e ) / T
+
+    return CoOmega1, CoOmega2, CoOmega3, CoOmega4, CoOmega5, CoOmega6, CoOmega7, CoOmega8
 
 def get_Omega_Moments(e):
     n = np.shape(e)[1]
@@ -218,3 +227,27 @@ def get_Omega_Moments(e):
 
     return Omega
 
+
+def get_omegaext(e):
+    n = np.shape(e)[1]
+    omegaext = np.full([n, 7,n+1], np.nan)
+
+    omegaext[:, 0,0] = np.mean(np.power(e, 0), axis=0)
+    omegaext[:, 1,0] = np.mean(np.power(e, 1), axis=0)
+    omegaext[:, 2,0] = np.mean(np.power(e, 2), axis=0)
+    omegaext[:, 3,0] = np.mean(np.power(e, 3), axis=0)
+    omegaext[:, 4,0] = np.mean(np.power(e, 4), axis=0)
+    omegaext[:, 5,0] = np.mean(np.power(e, 5), axis=0)
+    omegaext[:, 6,0] = np.mean(np.power(e, 6), axis=0)
+
+    for i in range(n):
+        omegaext[:, 0, i+1] = np.mean(np.multiply(np.power(e, 0), e[:,i].reshape(-1, 1)), axis=0)
+        omegaext[:, 1, i+1] = np.mean(np.multiply(np.power(e, 1), e[:,i].reshape(-1, 1) ), axis=0)
+        omegaext[:, 2, i+1] = np.mean(np.multiply(np.power(e, 2), e[:,i].reshape(-1, 1) ), axis=0)
+        omegaext[:, 3, i+1] = np.mean(np.multiply(np.power(e, 3), e[:,i].reshape(-1, 1) ), axis=0)
+        omegaext[:, 4, i+1] = np.mean(np.multiply(np.power(e, 4), e[:,i].reshape(-1, 1) ), axis=0)
+        omegaext[:, 5, i+1] = np.mean(np.multiply(np.power(e, 5), e[:,i].reshape(-1, 1) ), axis=0)
+        omegaext[:, 6, i+1] = np.mean(np.multiply(np.power(e, 6), e[:,i].reshape(-1, 1) ), axis=0)
+
+    return omegaext
+ 
