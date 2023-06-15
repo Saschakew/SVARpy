@@ -9,7 +9,7 @@ with open('LICENSE') as f:
 
 setuptools.setup(
     name="SVARpy",  
-    version="0.1.6",
+    version="0.1.7",
     author="Sascha Keweloh",
     author_email="sascha.keweloh@tu-dortmund.de",
     description="SVAR estimation",
