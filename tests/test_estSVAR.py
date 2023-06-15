@@ -103,13 +103,13 @@ def test_GMM(supply_eps):
     prepOptions['bstart'] = b
     prepOptions['moments'] = moments
     prepOptions['restrictions'] = restrictions
-    prepOptions['Avarparametric'] = "Uncorrelated"
+    prepOptions['Avarparametric'] = "Independent"
     svar_out = SVAR.SVARest(u, estimator='GMM', prepOptions=prepOptions)
     B_est = svar_out['B_est']
     loss = svar_out['loss']
-    avar = np.diag(svar_out['Avar_est'])
+    avar = svar_out['Avar_est']
 
-    avar_expected = np.array([[0.99407, -0.00511], [0.01774, 1.01315]])
+    avar_expected = np.array([[1.9402818468659488, 0.2733512070290248, 0.1284802727181451, 0.7012494706027909], [0.2733512070290248, 1.9756584345286183, -0.8135648505469544, 0.08800376364855292], [0.12848027271814508, -0.8135648505469546, 2.0956674150027013, 0.31668421313059375], [0.7012494706027907, 0.08800376364855292, 0.31668421313059375, 1.968376039877903]])
     loss_expected = 0.0010397156643544272
     B_est_expected = np.array([[0.9935424993853278, -0.008754219586363085], [0.010958149691157675, 1.0134172158135832]])
 
@@ -134,7 +134,7 @@ def test_GMM(supply_eps):
     B_est = svar_out['B_est']
     loss = svar_out['loss']
     loss_expected = 0.0005985534575471171
-    B_est_expected = np.array([[0.9940699962373792, -0.005110474249419577], [0.017744234663139853, 1.013150245805496]])
+    B_est_expected = np.array([[0.99407, -0.00511], [0.01775, 1.01315]])
 
     loss = np.round(loss, 5)
     loss_expected = np.round(loss_expected, 5)
@@ -152,7 +152,7 @@ def test_GMM(supply_eps):
     B_est = svar_out['B_est']
     loss = svar_out['loss']
     loss_expected = 0.0006255099149225711
-    B_est_expected = np.array([[0.9936683626215921, -0.005094839495172438], [0.01749377396745757, 1.0129039091699779]])
+    B_est_expected = np.array([[0.99367, -0.0051], [0.01749, 1.01291]])
 
     loss = np.round(loss, 5)
     loss_expected = np.round(loss_expected, 5)
