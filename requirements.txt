@@ -7,5 +7,4 @@ statsmodels
 tabulate
 pathos
 pytest
-sklearn
-SST
+pytest
