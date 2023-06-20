@@ -147,7 +147,7 @@ def SVARout(est_SVAR, options, u):
             GC = get_G_Indep(comoments, out_SVAR['B_est'], out_SVAR['omega'], options['restrictions'])
 
         S = get_S_uncentered(u, SVAR.get_BVector(B_est, restrictions=np.full([n, n], np.nan)),
-                             np.append(Moments2, options['moments'], axis=0), np.full([n, n], np.nan))
+                             np.append(Moments2, comoments, axis=0), np.full([n, n], np.nan))
         S22 = S[:np.shape(Moments2)[0],:np.shape(Moments2)[0]]
         S2C = S[:np.shape(Moments2)[0],np.shape(Moments2)[0]:]
         SC2 = S[np.shape(Moments2)[0]:,:np.shape(Moments2)[0]]
