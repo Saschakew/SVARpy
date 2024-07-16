@@ -22,56 +22,6 @@ import scipy.stats
 #     return results
 
 
-def get_rhs_flex(y, this_lags, maxLag, add_const=True, add_trend=False, add_trend2=False):
-    # LagsM = np.array([2, 3])
-
-    T, n = np.shape(y)
-    Time = np.arange(T - maxLag)
-
-    if add_const:
-        rhs = np.ones([1,T - maxLag])
-    # else:
-    #     rhs = np.zeros([T - maxLag])
-
-    if add_trend:
-        rhs = np.vstack((rhs, Time))
-    # else:
-    #     rhs = np.vstack((rhs, np.zeros([T - maxLag])))
-
-    if add_trend2:
-        rhs = np.vstack((rhs, np.power(Time, 2)))
-    # else:
-    #     rhs = np.vstack((rhs, np.zeros([T - maxLag])))
-    try:
-        rhs = np.transpose(rhs)
-        for lag in range(maxLag):
-            if lag < this_lags:
-                rhs = np.append(rhs, y[(maxLag - lag - 1):(-lag - 1), :], axis=1)
-            else:
-                rhs = np.append(rhs, np.zeros([T - maxLag, n]), axis=1)
-    except:
-        for lag in range(maxLag):
-            if lag == 0:
-                if lag < this_lags:
-                    rhs =   y[(maxLag - lag - 1):(-lag - 1), :]
-                else:
-                    rhs =  np.zeros([T - maxLag, n])
-            else:
-                if lag < this_lags:
-                    rhs = np.append(rhs, y[(maxLag - lag - 1):(-lag - 1), :], axis=1)
-                else:
-                    rhs = np.append(rhs, np.zeros([T - maxLag, n]), axis=1)
-
-    if "rhs" not in locals():
-        rhs = []
-
-    return rhs
-
-
-def get_lhs(y, lags):
-    lhs = y[lags:, :]
-    return lhs
-
 
 def get_ARMAtrices(coefmat, n, lags, add_const=True, add_trend=True, add_trend2=True):
     if add_const:
@@ -98,36 +48,35 @@ def get_ARMAtrices(coefmat, n, lags, add_const=True, add_trend=True, add_trend2=
     return AR, const, trend, trend2
 
 
-def OLS_ReducedForm(y, lags=1, add_const=True, add_trend=False, add_trend2=False, exog=[],showresults=False):
-    T, n = np.shape(y)
-    if np.shape(lags) == ():
-        lags = np.multiply(np.ones([n], dtype=int), int(lags), dtype=int)
-    maxLags = int(np.max(lags))
 
-    coefmat = np.empty([n, maxLags * n + (add_const+add_trend+add_trend2)])
-    u = np.empty([T - maxLags, n])
-    for i in range(n):
-        rhs = get_rhs_flex(y, lags[i], maxLags, add_const=add_const, add_trend=add_trend, add_trend2=add_trend2)
-        lhs = y[maxLags:, i]
-        if np.array(exog).size != 0:
-            rhs = np.append(rhs, np.transpose(np.array([exog[lags[i]: ]])), axis=1)
 
-        try:
-            model = sm.OLS(lhs, rhs)
-            results = model.fit()
-            if showresults:
-                print(results.summary())
 
-            if np.array(exog).size != 0:
-                results.params = results.params[:-1]
-            coefmat[i, :] = results.params
+def OLS_ReducedForm(y, lags, add_const=True, add_trend=False, add_trend2=False, exog=[],showresults=False):
+    T, n = y.shape
 
-            u[:, i] = results.resid
-        except:
-            coefmat = []
-            u[:,i] = y[:,i]
+    shortY = y[lags:]
 
-    AR, const, trend, trend2 = get_ARMAtrices(coefmat, n, maxLags, add_const=add_const, add_trend=add_trend, add_trend2=add_trend2)
+    X = np.zeros((T - lags, n * lags))
+    for i in range(1, lags + 1):
+        X[:, ( i-1) * n:( i ) * n] = y[lags - i:T - i]
+
+    Xexo = np.ones((T - lags, 1)) if add_const else np.empty((T - lags, 0))
+
+    if add_trend:
+        Time = np.arange(T - lags).reshape(-1,1)
+        Xexo = np.hstack((Xexo, Time))
+
+    if add_trend2:
+        Time = np.arange(T - lags).reshape(-1,1)
+        Xexo = np.hstack((Xexo, np.power(Time,2)))
+
+    X = np.hstack((Xexo, X))
+
+    Atilde = np.linalg.lstsq(X, shortY, rcond=None)[0].T
+    u = shortY - X @ Atilde.T
+
+    AR, const, trend, trend2 = get_ARMAtrices(Atilde, n, lags, add_const=add_const, add_trend=add_trend,
+                                              add_trend2=add_trend2)
     out = dict()
     out['u'] = u
     out['AR'] = AR
