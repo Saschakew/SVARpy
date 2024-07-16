@@ -108,7 +108,11 @@ def SVARest(u, estimator='GMM', options=dict(), prepOptions=dict(), prepared=Fal
                                                              moments_powerindex=options['moments_powerindex'],
                                                              W=Wupd(b_vec) )
 
-            this_grad = []
+            if options['Wpara'] == 'Independent':
+                this_grad = lambda b_vec: SVAR.estimatorGMM.gradient_scalecont(u, b_vec, options['Jacobian'] , Wupd, options['restrictions'], options['moments'], options['moments_powerindex'])
+            else:
+                this_grad = []
+
 
             optim_start = options['bstart']
             if np.shape(optim_start)[0] == 0:

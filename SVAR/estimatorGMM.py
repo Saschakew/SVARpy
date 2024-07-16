@@ -52,6 +52,48 @@ def gradient_cont(u, b, Jacobian, W, restrictions, moments, moments_powerindex, 
     return (dGMM_temp)
 
 
+def gradient_scalecont(u, b, Jacobian, Wupd, restrictions, moments, moments_powerindex):
+    e = SVAR.innovation(u, b, restrictions=restrictions)
+    CoOmega = SVAR.SVARutil.get_CoOmega(e)
+
+    Jac_temp = Jacobian(u=u, b=b, restrictions=restrictions, CoOmega=CoOmega)
+    this_g = SVAR.estimatorGMM.get_g(b=b[:], u=u[:], restrictions=restrictions[:],
+                                     moments=moments[:], moments_powerindex=moments_powerindex)
+
+    # Get the current W matrix
+    W = Wupd(b)
+
+    # First term of the gradient (same as before)
+    dGMM_temp = 2 * np.linalg.multi_dot([np.transpose(Jac_temp), W, this_g])
+
+    # Calculate the gradient of W with respect to b
+    dW_db = calculate_dW_db(b, Wupd)
+
+    # Second term of the gradient (accounting for W's dependence on b)
+    dGMM_W = np.einsum('ijk,j,k->i', dW_db, this_g, this_g)
+
+    # Combine both terms
+    dGMM = dGMM_temp + dGMM_W
+
+    return dGMM
+
+
+def calculate_dW_db(b, Wupd, h=1e-8):
+    """
+    Calculate the gradient of W with respect to b using finite differences.
+    """
+    n_params = len(b)
+    W = Wupd(b)
+    dW_db = np.zeros((n_params,) + W.shape)
+
+    for i in range(n_params):
+        b_plus = b.copy()
+        b_plus[i] += h
+        W_plus = Wupd(b_plus)
+        dW_db[i] = (W_plus - W) / h
+
+    return dW_db
+
 # Estimate Avar and tests
 def get_Avar(n, G,S,W=[],restrictions=[]):
     if np.array(W).size == 0:
@@ -130,8 +172,10 @@ def prepareOptions(u,
     options['Jacobian'] = Jacobian
 
 
-
-    Sdel_func = SVAR.SVARutilGMM.generat_S_del_functions(moments, restrictions)
+    if estimator == 'CSUE':
+        Sdel_func = SVAR.SVARutilGMM.generat_Scsue_del_functions(moments, restrictions)
+    else:
+        Sdel_func = SVAR.SVARutilGMM.generat_S_del_functions(moments, restrictions)
     options['Sdel_func'] = Sdel_func
 
     bstart = SVAR.estPrepare.prepare_bstart('GMM', bstart, u, options, bstartopt=bstartopt )
