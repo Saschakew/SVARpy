@@ -161,29 +161,29 @@ def bootstrap_SVAR(y, estimator='GMM',
 
 
 
-def simulate_SVAR(y,u, AR, const, trend, trend2, shuffle=True, jobno=1, seed_start=0):
+
+def simulate_SVAR(y, u, AR, const, trend, trend2, jobno=1, seed_start=0, burn_in=500):
     np.random.seed(seed_start + jobno)
-    T, n = np.shape(u)
-    lags = np.shape(AR)[2]
+    T, n = u.shape
+    lags = AR.shape[2]
 
-    if shuffle:
-        u_resample_index = np.random.choice(T, T, replace=True)
-        u_resample = u[u_resample_index, :]
-    else:
-        u_resample = u
+    # Pre-allocate the entire array
+    y_new = np.zeros((T + lags + burn_in, n))
+    y_new[:lags] = y[:lags]
 
-    y_new = copy.deepcopy(y)
-    for t in range(T):
-        tmpsum = const + np.multiply(trend, t - lags) + np.multiply(trend2, t - lags)
+    # Resample u
+    u_resample = u[np.random.choice(T, T + lags + burn_in, replace=True)]
+
+    # Pre-compute trend terms
+    trend_terms = np.outer(np.arange(-lags, T + burn_in - lags), trend) + \
+                  np.outer(np.arange(-lags, T + burn_in - lags)**2, trend2)
+
+    for t in range(lags, T + lags + burn_in):
+        y_new[t] = const + trend_terms[t-lags] + u_resample[t-lags]
         for j in range(lags):
-            # if t - j > 0:
-            tmpsum = tmpsum + np.matmul(AR[:, :, j], y_new[lags+t - j - 1])
-            # else:
-            #     tmpsum = tmpsum + np.matmul(AR[:, :, j], ystart[t-j-1])
-        tmpsum = tmpsum + u_resample[t]
-        y_new[lags+t, :] = tmpsum
+            y_new[t] += AR[:, :, j] @ y_new[t - j - 1]
 
-    return y_new
+    return y_new[lags + burn_in:]
 
 def simulate_SVAR2(e,B, AR, const, trend, trend2,ystart):
     T, n = np.shape(e)
