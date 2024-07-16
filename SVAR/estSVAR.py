@@ -25,13 +25,23 @@ def SVARest(u, estimator='GMM', options=dict(), prepOptions=dict(), prepared=Fal
                                                              moments=options['moments'],
                                                              moments_powerindex=options['moments_powerindex'],
                                                              W=options['W'] )
-            # this_grad = lambda b_vec: SVAR.estimatorGMM.gradient(u, b_vec,
-            #                                                      Jacobian=options['Jacobian'],
-            #                                                      W=options['W'],
-            #                                                      restrictions=options['restrictions'],
-            #                                                      moments=options['moments'],
-            #                                                      moments_powerindex=options['moments_powerindex'])
-            this_grad = []
+
+            this_grad = lambda b_vec: SVAR.estimatorGMM.gradient(u, b_vec,
+                                                                 Jacobian=options['Jacobian'],
+                                                                 W=options['W'],
+                                                                 restrictions=options['restrictions'],
+                                                                 moments=options['moments'],
+                                                                 moments_powerindex=options['moments_powerindex'])
+
+
+            # this_grad(options['bstart'])
+            # this_grad = []
+
+
+            # eps = np.sqrt(np.finfo(float).eps)
+            # this_grad2 = lambda b_vec: optimize.approx_fprime(b_vec, this_loss, eps)
+            # this_grad2(options['bstart'])
+
             optim_start = options['bstart']
             if np.shape(optim_start)[0] == 0:
                 # raise ValueError('No free parameters.')
@@ -148,11 +158,31 @@ def SVARest(u, estimator='GMM', options=dict(), prepOptions=dict(), prepared=Fal
                                                                                           S_func=options['S_func']))
 
 
+            if options['Wpara'] == 'Independent':
+                this_grad = lambda b_vec: SVAR.estimatorGMM.gradient_cont(u, b_vec,
+                                                                     Jacobian=options['Jacobian'],
+                                                                     W=SVAR.SVARutilGMM.get_W_opt(u, b=b_vec,
+                                                                                              restrictions=options[
+                                                                                                   'restrictions'],
+                                                                                              moments=options['moments'],
+                                                                                              Wpara=options['Wpara'],
+                                                                                              S_func=options['S_func']),
+                                                                     restrictions=options['restrictions'],
+                                                                     moments=options['moments'],
+                                                                     moments_powerindex=options['moments_powerindex'],
+                                                                    Sdel_func=options['Sdel_func'])
+            else:
+                this_grad = []
 
 
-            #eps = np.sqrt(np.finfo(float).eps)
-            #this_grad = lambda b_vec: optimize.approx_fprime(b_vec, this_loss, eps)
-            this_grad = []
+
+            # this_grad(options['bstart'])
+
+
+            # eps = np.sqrt(np.finfo(float).eps)
+            # this_grad2 = lambda b_vec: optimize.approx_fprime(b_vec, this_loss, eps)
+            # this_grad2(options['bstart'])
+
 
             optim_start = options['bstart']
             if np.shape(optim_start)[0] == 0:
