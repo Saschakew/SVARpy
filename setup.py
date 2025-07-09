@@ -14,7 +14,7 @@ except FileNotFoundError:
 
 setuptools.setup(
   name="SVARpy",
-  version="0.1.14",
+  version="0.1.15",
   author="Sascha Keweloh",
   author_email="sascha.keweloh@tu-dortmund.de",
   description="SVAR estimation",
