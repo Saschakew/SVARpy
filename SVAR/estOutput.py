@@ -265,11 +265,11 @@ def print_out(n,T,out_SVAR):
     for i in range(n):
         for j in range(n):
             if not (np.isnan(restrictions[i, j])):
-                b_est = np.insert(b_est, elementcounter, np.full(1, np.NaN), 0)
-                wald_all = np.insert(wald_all, elementcounter, np.full(1, np.NaN), 0)
-                wald_all_p = np.insert(wald_all_p, elementcounter, np.full(1, np.NaN), 0)
-                t_all_p = np.insert(t_all_p, elementcounter, np.full(1, np.NaN), 0)
-                t_all = np.insert(t_all, elementcounter, np.full(1, np.NaN), 0)
+                b_est = np.insert(b_est, elementcounter, np.full(1, np.nan), 0)
+                wald_all = np.insert(wald_all, elementcounter, np.full(1, np.nan), 0)
+                wald_all_p = np.insert(wald_all_p, elementcounter, np.full(1, np.nan), 0)
+                t_all_p = np.insert(t_all_p, elementcounter, np.full(1, np.nan), 0)
+                t_all = np.insert(t_all, elementcounter, np.full(1, np.nan), 0)
             elementcounter += 1
     rows = idx_Best(n)
     for i in range(n):
@@ -386,11 +386,11 @@ def print_out_scaled(n,T,out_SVAR):
     for i in range(n):
         for j in range(n):
             if not (np.isnan(restrictions[i, j])):
-                b_est = np.insert(b_est, elementcounter, np.full(1, np.NaN), 0)
-                wald_all = np.insert(wald_all, elementcounter, np.full(1, np.NaN), 0)
-                wald_all_p = np.insert(wald_all_p, elementcounter, np.full(1, np.NaN), 0)
-                t_all_p = np.insert(t_all_p, elementcounter, np.full(1, np.NaN), 0)
-                t_all = np.insert(t_all, elementcounter, np.full(1, np.NaN), 0)
+                b_est = np.insert(b_est, elementcounter, np.full(1, np.nan), 0)
+                wald_all = np.insert(wald_all, elementcounter, np.full(1, np.nan), 0)
+                wald_all_p = np.insert(wald_all_p, elementcounter, np.full(1, np.nan), 0)
+                t_all_p = np.insert(t_all_p, elementcounter, np.full(1, np.nan), 0)
+                t_all = np.insert(t_all, elementcounter, np.full(1, np.nan), 0)
             elementcounter += 1
     rows = idx_Best(n)
     for i in range(n):
@@ -507,11 +507,11 @@ def print_out_scaled(n,T,out_SVAR):
     for i in range(n):
         for j in range(n):
             if not (np.isnan(restrictions[i, j])):
-                b_est = np.insert(b_est, elementcounter, np.full(1, np.NaN), 0)
-                wald_all = np.insert(wald_all, elementcounter, np.full(1, np.NaN), 0)
-                wald_all_p = np.insert(wald_all_p, elementcounter, np.full(1, np.NaN), 0)
-                t_all_p = np.insert(t_all_p, elementcounter, np.full(1, np.NaN), 0)
-                t_all = np.insert(t_all, elementcounter, np.full(1, np.NaN), 0)
+                b_est = np.insert(b_est, elementcounter, np.full(1, np.nan), 0)
+                wald_all = np.insert(wald_all, elementcounter, np.full(1, np.nan), 0)
+                wald_all_p = np.insert(wald_all_p, elementcounter, np.full(1, np.nan), 0)
+                t_all_p = np.insert(t_all_p, elementcounter, np.full(1, np.nan), 0)
+                t_all = np.insert(t_all, elementcounter, np.full(1, np.nan), 0)
             elementcounter += 1
     rows = idx_Best(n)
     for i in range(n):
@@ -628,11 +628,11 @@ def print_out_scaled(n,T,out_SVAR):
     for i in range(n):
         for j in range(n):
             if not (np.isnan(restrictions[i, j])):
-                b_est = np.insert(b_est, elementcounter, np.full(1, np.NaN), 0)
-                wald_all = np.insert(wald_all, elementcounter, np.full(1, np.NaN), 0)
-                wald_all_p = np.insert(wald_all_p, elementcounter, np.full(1, np.NaN), 0)
-                t_all_p = np.insert(t_all_p, elementcounter, np.full(1, np.NaN), 0)
-                t_all = np.insert(t_all, elementcounter, np.full(1, np.NaN), 0)
+                b_est = np.insert(b_est, elementcounter, np.full(1, np.nan), 0)
+                wald_all = np.insert(wald_all, elementcounter, np.full(1, np.nan), 0)
+                wald_all_p = np.insert(wald_all_p, elementcounter, np.full(1, np.nan), 0)
+                t_all_p = np.insert(t_all_p, elementcounter, np.full(1, np.nan), 0)
+                t_all = np.insert(t_all, elementcounter, np.full(1, np.nan), 0)
             elementcounter += 1
     rows = idx_Best(n)
     for i in range(n):

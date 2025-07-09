@@ -76,8 +76,8 @@ def get_Avar(n, G2,GC, S22, S2C, SC2, SCC, W=[],restrictions=[]):
     for i in range(n):
         for j in range(n):
             if not (np.isnan(restrictions[i, j])):
-                V_est = np.insert(V_est, elementcounter, np.full(np.shape(V_est)[1], np.NaN), 0)
-                V_est = np.insert(V_est, elementcounter, np.full(np.shape(V_est)[0], np.NaN), 1)
+                V_est = np.insert(V_est, elementcounter, np.full(np.shape(V_est)[1], np.nan), 0)
+                V_est = np.insert(V_est, elementcounter, np.full(np.shape(V_est)[0], np.nan), 1)
             elementcounter += 1
     return V_est
 
@@ -167,8 +167,8 @@ def get_GMM_W_Avar_param(Moments, B, omega, restrictions=[], W=[]):
     for i in range(n):
         for j in range(n):
             if not (np.isnan(restrictions[i, j])):
-                V = np.insert(V, elementcounter, np.full(np.shape(V)[1], np.NaN), 0)
-                V = np.insert(V, elementcounter, np.full(np.shape(V)[0], np.NaN), 1)
+                V = np.insert(V, elementcounter, np.full(np.shape(V)[1], np.nan), 0)
+                V = np.insert(V, elementcounter, np.full(np.shape(V)[0], np.nan), 1)
             elementcounter += 1
 
     return V

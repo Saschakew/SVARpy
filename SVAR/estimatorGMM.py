@@ -111,8 +111,8 @@ def get_Avar(n, G,S,W=[],restrictions=[]):
     for i in range(n):
         for j in range(n):
             if not (np.isnan(restrictions[i, j])):
-                V_est = np.insert(V_est, elementcounter, np.full(np.shape(V_est)[1], np.NaN), 0)
-                V_est = np.insert(V_est, elementcounter, np.full(np.shape(V_est)[0], np.NaN), 1)
+                V_est = np.insert(V_est, elementcounter, np.full(np.shape(V_est)[1], np.nan), 0)
+                V_est = np.insert(V_est, elementcounter, np.full(np.shape(V_est)[0], np.nan), 1)
             elementcounter += 1
     return V_est
 
