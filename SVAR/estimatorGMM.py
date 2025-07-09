@@ -157,7 +157,7 @@ def prepareOptions(u,
     options['blocks'] = blocks
 
     moments = SVAR.estPrepare.prepare_moments('GMM', moments, addThirdMoments, addFourthMoments, moments_blocks,
-                                              blocks, n,moments_MeanIndep)
+                                              blocks, n,moments_MeanIndep,onlybivariate)
     options['moments'] = moments
     options['moments_MeanIndep'] = moments_MeanIndep
     options['moments_powerindex'] = SVAR.SVARutilGMM.get_Moments_powerindex(moments)
