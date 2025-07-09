@@ -71,7 +71,7 @@ def get_Moments_MIcorrection(n, blocks=False):
     moments = moments[1:, :]
     return moments
 
-def get_Moments(estimator, n, blocks=False, addThirdMoments=False, addFourthMoments=True,  moments_MeanIndep=False):
+def get_Moments(estimator, n, blocks=False, addThirdMoments=False, addFourthMoments=True,  moments_MeanIndep=False, onlybivariate=False):
     if blocks == False:
         blocks = list()
         blocks.append(np.array([1, n]))
@@ -90,10 +90,14 @@ def get_Moments(estimator, n, blocks=False, addThirdMoments=False, addFourthMome
             if addThirdMoments:
                 if estimator == 'GMM' or estimator == 'CUE' or estimator == 'CSUE':
                     moment_add = get_Cr(3, block_length)
+                    if onlybivariate:
+                        moment_add = moment_add[np.sum(moment_add == 0, axis=1) == n-2]
                     moments_this = np.append(moments_this, moment_add, axis=0)
 
                 elif estimator == 'GMM_W':
                     moment_add = get_Cr(3, block_length)
+                    if onlybivariate:
+                        moment_add = moment_add[np.sum(moment_add == 0, axis=1) == 2]
 
                     moments_this = np.append(moments_this, moment_add, axis=0)
 
@@ -103,6 +107,8 @@ def get_Moments(estimator, n, blocks=False, addThirdMoments=False, addFourthMome
             if addFourthMoments:
                 if estimator == 'GMM' or estimator == 'CUE' or estimator == 'CSUE':
                     moment_add = get_Cr(4, block_length)
+                    if onlybivariate:
+                        moment_add = moment_add[np.sum(moment_add == 0, axis=1) == n - 2]
 
                     if moments_MeanIndep:
                         select = np.full(np.shape(moment_add)[0], False)
@@ -116,6 +122,8 @@ def get_Moments(estimator, n, blocks=False, addThirdMoments=False, addFourthMome
 
                 elif estimator == 'GMM_W':
                     moment_add = get_Cr(4, block_length)
+                    if onlybivariate:
+                        moment_add = moment_add[np.sum(moment_add == 0, axis=1) == n - 2]
 
                     if moments_MeanIndep:
                         select = np.full(np.shape(moment_add)[0], False)

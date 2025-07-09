@@ -69,7 +69,7 @@ def prepare_blocks_restrictions(n, n_rec, blocks, restrictions):
 
     return restrictions, blocks
 
-def prepare_moments(estimator, moments, addThirdMoments, addFourthMoments, moments_blocks, blocks, n, moments_MeanIndep=False):
+def prepare_moments(estimator, moments, addThirdMoments, addFourthMoments, moments_blocks, blocks, n, moments_MeanIndep=False, onlybivariate=False):
     if np.array(moments).size == 0:
         if moments_blocks:
             blocks = blocks
@@ -77,7 +77,7 @@ def prepare_moments(estimator, moments, addThirdMoments, addFourthMoments, momen
             blocks = False
         moments = SVAR.SVARutilGMM.get_Moments(estimator, n, blocks=blocks,
                                                addThirdMoments=addThirdMoments,
-                                               addFourthMoments=addFourthMoments, moments_MeanIndep=moments_MeanIndep)
+                                               addFourthMoments=addFourthMoments, moments_MeanIndep=moments_MeanIndep, onlybivariate=onlybivariate)
     return moments
 
 def prepare_bstart(estimator, bstart, u, options, bstartopt='Rec' ):

@@ -121,7 +121,7 @@ def get_Avar(n, G,S,W=[],restrictions=[]):
 
 # Only for GMM (not w or wf)
 def prepareOptions(u,
-                   addThirdMoments=True, addFourthMoments=True, moments=[], moments_blocks=True,  moments_MeanIndep=False,
+                   addThirdMoments=True, addFourthMoments=True, moments=[], moments_blocks=True,  moments_MeanIndep=False,onlybivariate=False,
                    bstart=[], bstartopt='Rec',
                    Avarparametric='Uncorrelated',
                    restrictions=[], blocks=False, n_rec=False,
@@ -161,6 +161,7 @@ def prepareOptions(u,
     options['moments'] = moments
     options['moments_MeanIndep'] = moments_MeanIndep
     options['moments_powerindex'] = SVAR.SVARutilGMM.get_Moments_powerindex(moments)
+    options['onlybivariate'] = onlybivariate
 
     options['moments_num'] = np.shape(options['moments'])[0]
     options['moments_num2']  = np.sum(np.sum(options['moments'], axis=1) == 2)
